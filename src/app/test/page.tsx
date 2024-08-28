@@ -1,0 +1,52 @@
+'use client';
+
+import { useState } from 'react';
+
+type ClassificationResult = {
+    label: string;
+    score: number;
+}[] | null;
+
+export default function Home() {
+    // Keep track of the classification result and the model loading status.
+    const [result, setResult] = useState<ClassificationResult>(null);
+    const [ready, setReady] = useState<boolean | null>(null);
+
+    // Type the classify function and the text argument.
+    const classify = async (text: string): Promise<void> => {
+        if (!text) return;
+        if (ready === null) setReady(false);
+
+        // Make a request to the /classify route on the server.
+        const response = await fetch(`/api/classify?text=${encodeURIComponent(text)}`);
+
+        // If this is the first time we've made a request, set the ready flag.
+        if (!ready) setReady(true);
+
+        const json: ClassificationResult = await response.json();
+        setResult(json);
+    };
+
+    return (
+        <main className="flex min-h-screen flex-col items-center justify-center p-12">
+            <h1 className="text-5xl font-bold mb-2 text-center">Transformers.js</h1>
+            <h2 className="text-2xl mb-4 text-center">Next.js template (server-side)</h2>
+            <input
+                type="text"
+                className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
+                placeholder="Enter text here"
+                // Type the event argument to properly handle the input event
+                onInput={(e: React.FormEvent<HTMLInputElement>) => {
+                    classify(e.currentTarget.value);
+                }}
+            />
+
+            {ready !== null && (
+                <pre className="bg-gray-100 p-2 rounded">
+                    {
+                        (!ready || !result) ? 'Loading...' : JSON.stringify(result, null, 2)}
+                </pre>
+            )}
+        </main>
+    );
+}
