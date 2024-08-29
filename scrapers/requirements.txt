@@ -1,0 +1,8 @@
+groq
+requests
+urllib3
+beautifulsoup4
+flask
+flask-cors
+nltk
+dotenv
