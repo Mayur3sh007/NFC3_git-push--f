@@ -33,7 +33,7 @@ export default function Navbar() {
                         <Input
                             type="search"
                             placeholder="Search..."
-                            className="w-64 mr-2 bg-light-1 text-dark-1"
+                            className="w-64 mr-2 bg-light-2 text-dark-1"
                         />
                         <Button size="icon">
                             <Search className="h-4 w-4" />
