@@ -1,12 +1,12 @@
 import React from 'react'
-import { MPProfile, AIData } from '@/lib/types'
+import { MPProfile, AIData, ChartData } from '@/lib/types'
 import Image from 'next/image'
 import { AlertTriangle } from 'lucide-react'
 import { Component } from './ParTracker';
 
-export default function MPPage({ data, id, aiData }: { data: MPProfile[], id: string, aiData: AIData[] }) {
+export default function MPPage({ data, id, aiData, chartData }: { data: MPProfile[], id: string, aiData: AIData, chartData: ChartData }) {
     const mp = data.find(item => item.id === id);
-    const ai = aiData[0]; // Assuming there's only one AI data object per MP
+    const ai = aiData
 
     if (!mp) {
         return <div className="text-light-1">MP not found</div>;
@@ -59,10 +59,10 @@ export default function MPPage({ data, id, aiData }: { data: MPProfile[], id: st
                 <div className="mt-8">
                     <h2 className="text-2xl font-bold mb-4">AI Analysis</h2>
                     <div className="flex flex-col gap-6">
-                        <AISection title="Main Agenda / Focus Areas" content={ai.main_agenda_or_focus_areas} />
-                        <AISection title="Criminal Record / Corruption Issues" content={ai.criminal_record_or_corruption_issues} />
-                        <AISection title="Legislative Activity" content={ai.legislative_activity} />
-                        <AISection title="Overall Performance" content={ai.overall_performance} />
+                        <AISection title="Main Agenda / Focus Areas" content={ai?.main_agenda_or_focus_areas} />
+                        <AISection title="Criminal Record / Corruption Issues" content={ai?.criminal_record_or_corruption_issues} />
+                        <AISection title="Legislative Activity" content={ai?.legislative_activity} />
+                        <AISection title="Overall Performance" content={ai?.overall_performance} />
                     </div>
                 </div>
             </div>
@@ -91,40 +91,45 @@ const AISection = ({ title, content }: { title: string, content: any }) => (
         {title === "Main Agenda / Focus Areas" && (
             <>
                 <ul className="list-disc list-inside mb-2">
-                    {content.identified_themes.map((theme: string, index: number) => (
+                    {content?.identified_themes.map((theme: string, index: number) => (
                         <li key={index}>{theme}</li>
                     ))}
                 </ul>
-                <p>{content.focus_areas}</p>
+                <p>{content?.focus_areas}</p>
             </>
         )}
         {title === "Criminal Record / Corruption Issues" && (
             <>
                 <h4 className="font-semibold mt-2">Pending Cases:</h4>
-                {content.pending_cases.map((caseItem: any, index: number) => (
+                {content?.pending_cases?.map((caseItem: any, index: number) => (
                     <div key={index} className="mb-2 p-2 bg-white rounded">
-                        <p><strong>Case Number:</strong> {caseItem.case_number}</p>
-                        <p><strong>Court:</strong> {caseItem.court}</p>
-                        <p><strong>Charges Framed:</strong> {caseItem.charges_framed ? 'Yes' : 'No'}</p>
-                        {caseItem.date && <p><strong>Date:</strong> {caseItem.date}</p>}
-                        <p><strong>Details:</strong> {caseItem.details}</p>
+                        <p><strong>Case Number:</strong> {caseItem?.case_number}</p>
+                        <p><strong>Court:</strong> {caseItem?.court}</p>
+                        <p><strong>Charges Framed:</strong> {caseItem?.charges_framed ? 'Yes' : 'No'}</p>
+                        {caseItem?.date && <p><strong>Date:</strong> {caseItem?.date}</p>}
+                        <p><strong>Details:</strong> {caseItem?.details}</p>
                     </div>
                 ))}
-                <p><strong>Convicted Cases:</strong> {content.convicted_cases}</p>
+                {
+                    content?.pending_cases?.length === 0 && (
+                        <p>No pending cases</p>
+                    )
+                }
+                <p><strong>Convicted Cases:</strong> {content?.convicted_cases}</p>
             </>
         )}
         {title === "Legislative Activity" && (
             <>
-                <p><strong>Questions Raised:</strong> {content.questions_raised_count}</p>
-                <p>{content.activity_description}</p>
+                <p><strong>Questions Raised:</strong> {content?.questions_raised_count}</p>
+                <p>{content?.activity_description}</p>
             </>
         )}
         {title === "Overall Performance" && (
             <>
-                <p>{content.impact}</p>
+                <p>{content?.impact}</p>
                 <div className="flex items-start mt-2 p-2 bg-yellow-100 rounded">
                     <AlertTriangle className="text-yellow-500 mr-2 mt-1" />
-                    <p><strong>Potential Concerns:</strong> {content.potential_concerns}</p>
+                    <p><strong>Potential Concerns:</strong> {content?.potential_concerns}</p>
                 </div>
             </>
         )}
