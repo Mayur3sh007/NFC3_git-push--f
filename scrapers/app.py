@@ -19,31 +19,6 @@ CORS(app)  # Enable CORS for all routes
 api_key = os.environ.get("GROQ_API_KEY")
 client = Groq()
 
-
-def get_neta_summary(prompt):
-  
-  completion = client.chat.completions.create(
-    model="llama3-8b-8192",
-    messages=[
-        {
-            "role": "system",
-            "content": system_summary_prompt_template
-        },
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ],
-    temperature=1,
-    max_tokens=1024,
-    top_p=1,
-    stream=False,
-    response_format={"type": "json_object"},
-    stop=None,
-  )
-    
-  return completion.choices[0].message.content
-
 def get_candidate_data(candidate_name):
     # Helper function to extract data from tables
     def extract_table_data(table):
@@ -185,21 +160,22 @@ def get_candidate_data(candidate_name):
         return {"error": f"An error occurred: {e}"}
 
 def format_detailed_prompt(data):
-    # Extract and format the data
+    print("Data received for formatting prompt:", data)
+
     pending_cases_summary = "\n".join([
         f"Case {i+1}: FIR No. {case['FIR No.']}, Case No. {case['Case No.']}, Court: {case['Court']}, Charges Framed: {case['Charges Framed']}, Date: {case['Date on which charges were framed']}"
-        for i, case in enumerate(data['pending_cases'])
-    ]) if data['pending_cases'] else "No pending cases available."
+        for i, case in enumerate(data.get('pending_cases', []))
+    ]) if data.get('pending_cases') else "No pending cases available."
 
-    convicted_cases_summary = "None" if not data['convicted_cases'][0]['Serial No.'] else "\n".join([
+    convicted_cases_summary = "None" if not data.get('convicted_cases') else "\n".join([
         f"Case {i+1}: {case['Serial No.']}"
         for i, case in enumerate(data['convicted_cases'])
-    ]) if data['convicted_cases'][0]['Serial No.'] != "---------No Cases--------" else "No convicted cases available."
+    ]) if data.get('convicted_cases')[0].get('Serial No.') != "---------No Cases--------" else "No convicted cases available."
 
     questions_summary = "\n".join([
         f"Question {i+1}: Date: {q['Date']}, Title: {q['Title']}, Link: {q.get('Link', 'No link available')}"
-        for i, q in enumerate(data['questions'])
-    ]) if data['questions'] else "No questions available."
+        for i, q in enumerate(data.get('questions', []))
+    ]) if data.get('questions') else "No questions available."
 
     # Create a detailed prompt
     prompt = f"""
@@ -214,7 +190,7 @@ def format_detailed_prompt(data):
     Questions Raised:
     {questions_summary}
 
-    This is a Indian Loksabha politician's data and you to analyze it thoroughly and Provide a detailed analysis covering of:
+    This is a Indian Loksabha politician's data and you to analyze it thoroughly and Provide a detailed analysis covering:
     1. *Main Agenda or Focus Areas*: Based on the questions, what seems to be the main focus or agenda of the politician?
     2. *Criminal Record or Corruption Issues*: Analyze the pending and convicted cases to assess the politician’s involvement in criminal activities or corruption.
     3. *Legislative Activity*: How active is the politician in terms of raising questions? What does this say about their legislative engagement?
@@ -223,14 +199,42 @@ def format_detailed_prompt(data):
     Ensure the analysis is comprehensive and provides detailed insights into the politician’s work and integrity.
     """
 
+    print("Generated Prompt:", prompt)
     return prompt
+
+def get_neta_summary(prompt):
+  
+  completion = client.chat.completions.create(
+    model="llama3-8b-8192",
+    messages=[
+        {
+            "role": "system",
+            "content": system_summary_prompt_template
+        },
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ],
+    temperature=1,
+    max_tokens=1024,
+    top_p=1,
+    stream=False,
+    response_format={"type": "json_object"},
+    stop=None,
+  )
+    
+  return completion.choices[0].message.content
 
 @app.route('/get_summary', methods=['GET'])
 def get_summary():
     data = request.json
     name = data.get("name")
-    prompt = format_detailed_prompt(get_candidate_data(name))
-    
+    print(name)
+    candidate_Data = get_candidate_data(name)
+    # print(candidate_Data)
+    prompt = format_detailed_prompt(candidate_Data)
+    print(prompt)
     if not prompt:
         return jsonify({"error": "Prompt is required"}), 400
     
