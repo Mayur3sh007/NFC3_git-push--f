@@ -11,7 +11,7 @@ const RootLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
     return (
         <>
             <Navbar />
-            <main className="h-[calc(100vh-72px)] bg-dark-4 flex items-center px-32">
+            <main className="min-h-[calc(100vh-72px)] bg-dark-4 flex items-center px-20">
                 {children}
             </main>
         </>
