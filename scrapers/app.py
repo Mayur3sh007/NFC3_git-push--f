@@ -479,64 +479,64 @@ def main(name, query, count=3):
 
 
 # Initialize the sentiment analysis pipeline
-pipe = pipeline('sentiment-analysis')
+# pipe = pipeline('sentiment-analysis')
 
-def truncate_text(text, max_length=512):
-    return text[:max_length]
+# def truncate_text(text, max_length=512):
+#     return text[:max_length]
 
-def split_text(text, max_length=512):
-    return [text[i:i + max_length] for i in range(0, len(text), max_length)]
+# def split_text(text, max_length=512):
+#     return [text[i:i + max_length] for i in range(0, len(text), max_length)]
 
-def aggregate_results(results):
-    aggregated_scores = defaultdict(list)
-    for result in results:
-        label = result['label']
-        score = result['score']
-        aggregated_scores[label].append(score)
+# def aggregate_results(results):
+#     aggregated_scores = defaultdict(list)
+#     for result in results:
+#         label = result['label']
+#         score = result['score']
+#         aggregated_scores[label].append(score)
 
-    average_scores = {label: sum(scores) / len(scores) for label, scores in aggregated_scores.items()}
+#     average_scores = {label: sum(scores) / len(scores) for label, scores in aggregated_scores.items()}
 
-    total_scores = [score for scores in aggregated_scores.values() for score in scores]
-    overall_average_score = sum(total_scores) / len(total_scores) if total_scores else 0
+#     total_scores = [score for scores in aggregated_scores.values() for score in scores]
+#     overall_average_score = sum(total_scores) / len(total_scores) if total_scores else 0
 
-    most_frequent_label = max(aggregated_scores, key=lambda x: len(aggregated_scores[x]))
+#     most_frequent_label = max(aggregated_scores, key=lambda x: len(aggregated_scores[x]))
 
-    return most_frequent_label, overall_average_score
+#     return most_frequent_label, overall_average_score
 
-def analyze_articles(articles):
-    all_results = []
-    global_results = []
+# def analyze_articles(articles):
+#     all_results = []
+#     global_results = []
 
-    for article in articles:
-        text = article['summary']
-        print(f"Analyzing article: {article['url']}")
+#     for article in articles:
+#         text = article['summary']
+#         print(f"Analyzing article: {article['url']}")
 
-        chunks = split_text(text)
-        chunk_results = [pipe(chunk) for chunk in chunks]
-        flattened_results = [item for sublist in chunk_results for item in sublist]
-        print(f"Chunk results for article: {flattened_results}")
+#         chunks = split_text(text)
+#         chunk_results = [pipe(chunk) for chunk in chunks]
+#         flattened_results = [item for sublist in chunk_results for item in sublist]
+#         print(f"Chunk results for article: {flattened_results}")
 
-        final_sentiment, final_score = aggregate_results(flattened_results)
-        print(f"Final Sentiment for article: {final_sentiment} (Score: {final_score:.4f})")
+#         final_sentiment, final_score = aggregate_results(flattened_results)
+#         print(f"Final Sentiment for article: {final_sentiment} (Score: {final_score:.4f})")
 
-        all_results.append({
-            'url': article['url'],
-            'final_sentiment': final_sentiment,
-            'final_score': final_score
-        })
+#         all_results.append({
+#             'url': article['url'],
+#             'final_sentiment': final_sentiment,
+#             'final_score': final_score
+#         })
         
-        # Add to global results for overall aggregation
-        global_results.extend(flattened_results)
+#         # Add to global results for overall aggregation
+#         global_results.extend(flattened_results)
 
-    # Aggregate sentiment results across all articles
-    global_sentiment, global_score = aggregate_results(global_results)
+#     # Aggregate sentiment results across all articles
+#     global_sentiment, global_score = aggregate_results(global_results)
     
-    # Add global sentiment results to the response
-    return {
-        'article_results': all_results,
-        'global_sentiment': global_sentiment,
-        'global_score': global_score
-    }
+#     # Add global sentiment results to the response
+#     return {
+#         'article_results': all_results,
+#         'global_sentiment': global_sentiment,
+#         'global_score': global_score
+#     }
 
 
 @app.route('/get_summary', methods=['POST'])

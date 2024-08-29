@@ -30,7 +30,7 @@ const SearchMP = () => {
     };
 
     return (
-        <div className='w-[40%]'>
+        <div className='w-full'>
             <div className="w-full max-w-md mx-auto bg-white shadow-md rounded-md overflow-hidden">
                 <div className="bg-dark-2 text-white p-4 text-xl font-bold">
                     Search Your MP
