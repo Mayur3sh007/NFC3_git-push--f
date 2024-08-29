@@ -44,7 +44,9 @@ def get_candidate_data(candidate_name):
     response = requests.get(search_url)
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    table = soup.find_all('table')[3]
+    tabletest = soup.find_all('table')
+    if len(tabletest) >= 4:
+        table = tabletest[3]
     if table:
         first_row = table.find('tr', class_=lambda x: x != 'w3-black')
         if first_row:
@@ -65,12 +67,40 @@ def get_candidate_data(candidate_name):
         profile_soup = BeautifulSoup(profile_response.content, "html.parser")
 
         cases = profile_soup.find_all("div", class_="w3-responsive")
-        data = {
-            "pending_cases": extract_table_data(cases[1]) if len(cases) > 1 else None,
-            "convicted_cases": extract_table_data(cases[2]) if len(cases) > 2 else None
-        }
+        if len(cases) == 0:
+            data = {}
+        else:
+            data = {
+                "pending_cases": extract_table_data(cases[1]) if len(cases) > 1 else None,
+                "convicted_cases": extract_table_data(cases[2]) if len(cases) > 2 else None
+            }
     except requests.exceptions.RequestException as e:
         return {"error": f"Network error occurred: {e}"}
+    
+    # criminal cases
+
+    criminal_cases = profile_soup.find("div", class_="w3-panel w3-red")
+    if criminal_cases is None:
+        criminal_cases = '0'
+    else:
+        criminal_cases = criminal_cases.find_all("div")
+        if len(criminal_cases) == 0:
+            criminal_cases = '0'
+        else:
+            criminal_cases = criminal_cases[1]
+            criminal_cases = criminal_cases.find("span").text.strip()
+    print(criminal_cases)
+
+    ipc_element = profile_soup.find("div", class_="w3-small")
+    
+    laws_broken = []
+    if ipc_element is None:
+        for item in ipc_element.find_all("li"):
+            direct_text = item.find(text=True, recursive=False)
+            text = direct_text.replace("charges related to", "").strip()
+            laws_broken.append(text)
+
+
 
     # Extract parliamentary activities data
     try:
@@ -154,8 +184,10 @@ def get_candidate_data(candidate_name):
         # Combine both cases and parliamentary activities data
         return {
             "profile_url": profile_url,
+            "criminal_cases": criminal_cases,
             "cases": data,
-            "parliamentary_activities": activity_data
+            "parliamentary_activities": activity_data,
+            "laws_broken": laws_broken
         }
     except requests.exceptions.RequestException as e:
         return {"error": f"Network error occurred: {e}"}

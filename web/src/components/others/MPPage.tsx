@@ -2,10 +2,11 @@ import React from 'react'
 import { MPProfile, AIData, ChartData } from '@/lib/types'
 import Image from 'next/image'
 import { AlertTriangle } from 'lucide-react'
-import { Component } from './ParTracker';
+import { Component } from './ParTracker'
 
 export default function MPPage({ data, id, aiData, chartData }: { data: MPProfile[], id: string, aiData: AIData, chartData: ChartData }) {
     const mp = data.find(item => item.id === id);
+    console.log(chartData);
 
     if (!mp) {
         return <div className="text-light-1">MP not found</div>;
@@ -54,7 +55,7 @@ export default function MPPage({ data, id, aiData, chartData }: { data: MPProfil
                     <h2 className="text-2xl font-bold mb-4">AI Analysis</h2>
                     <div className="flex flex-col gap-6">
                         <AISection title="Main Agenda / Focus Areas" content={aiData?.main_agenda_or_focus_areas} />
-                        <CriminalRecordSection title="Criminal Record / Corruption Issues" content={chartData?.cases} />
+                        <CriminalRecordSection title="Criminal Record / Corruption Issues" content={chartData} />
                         <LegislativeActivitySection title="Legislative Activity" content={chartData?.parliamentary_activities} />
                         <AISection title="Overall Performance" content={aiData?.overall_performance} />
                     </div>
@@ -64,36 +65,6 @@ export default function MPPage({ data, id, aiData, chartData }: { data: MPProfil
     )
 }
 
-const CriminalRecordSection = ({ title, content }: { title: string, content: any }) => (
-    <div className="bg-gray-100 p-4 rounded-lg">
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
-        <h4 className="font-semibold mt-2">Pending Cases:</h4>
-        {content?.pending_cases?.map((caseItem: any, index: number) => (
-            <div key={index} className="mb-2 p-2 bg-white rounded">
-                <p><strong>Case Number:</strong> {caseItem["Case No."]}</p>
-                <p><strong>Court:</strong> {caseItem?.court}</p>
-                <p><strong>Charges Framed:</strong> {caseItem?.charges_framed ? 'Yes' : 'No'}</p>
-                {caseItem?.date && <p><strong>Date:</strong> {caseItem?.date}</p>}
-                <p><strong>Details:</strong> {caseItem?.details}</p>
-            </div>
-        ))}
-        {
-            content?.pending_cases?.length === 0 && (
-                <p>No pending cases</p>
-            )
-        }
-        <p><strong>Convicted Cases:</strong> {content?.convicted_cases.join(', ')}</p>
-    </div>
-)
-
-const LegislativeActivitySection = ({ title, content }: { title: string, content: any }) => (
-    <div className="bg-gray-100 p-4 rounded-lg">
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
-        <p><strong>Questions Raised:</strong> {content?.questions.length}</p>
-    </div>
-)
-
-
 const InfoItem = ({ label, value }: { label: string; value: string }) => (
     <p className="mb-2">
         <span className="font-semibold">{label}: </span>
@@ -101,11 +72,30 @@ const InfoItem = ({ label, value }: { label: string; value: string }) => (
     </p>
 )
 
-const ActivityItem = ({ label, value, average }: { label: string; value: string; average: string }) => (
-    <div className="flex-1 bg-gray-100 p-4 rounded-lg">
-        <h3 className="font-semibold mb-2">{label}</h3>
-        <p className="text-2xl font-bold">{value}</p>
-        <p className="text-sm text-gray-600">National Average: {average}</p>
+const CriminalRecordSection = ({ title, content }: { title: string, content: ChartData }) => (
+    <div className="bg-gray-100 p-4 rounded-lg">
+        <h3 className="text-xl font-semibold mb-2">{title}</h3>
+        <p><strong>Number of Criminal Cases:</strong> {content.criminal_cases}</p>
+        <h4 className="font-semibold mt-4">Laws Broken:</h4>
+        <ul className="list-disc list-inside">
+            {content.laws_broken.map((law, index) => (
+                <li key={index}>{law}</li>
+            ))}
+        </ul>
+    </div>
+)
+
+const LegislativeActivitySection = ({ title, content }: { title: string, content: any }) => (
+    <div className="bg-gray-100 p-4 rounded-lg">
+        <h3 className="text-xl font-semibold mb-2">{title}</h3>
+        <p><strong>Questions Raised:</strong> {content?.questions.length}</p>
+        <h4 className="font-semibold mt-2">Debates Participated:</h4>
+        <ul className="list-disc list-inside">
+            {content?.debates.map((debate: any, index: number) => (
+                <li key={index}>{debate.Title} ({debate.Date})</li>
+            ))}
+        </ul>
+        <p><strong>Bills Introduced:</strong> {content?.bills.length}</p>
     </div>
 )
 
@@ -120,37 +110,6 @@ const AISection = ({ title, content }: { title: string, content: any }) => (
                     ))}
                 </ul>
                 <p>{content?.focus_areas}</p>
-            </>
-        )}
-        {title === "Criminal Record / Corruption Issues" && (
-            <>
-                <h4 className="font-semibold mt-2">Pending Cases:</h4>
-                {content?.pending_cases?.map((caseItem: any, index: number) => (
-                    <div key={index} className="mb-2 p-2 bg-white rounded">
-                        <p><strong>Case Number:</strong> {caseItem?.case_number}</p>
-                        <p><strong>Court:</strong> {caseItem?.court}</p>
-                        <p><strong>Charges Framed:</strong> {caseItem?.charges_framed ? 'Yes' : 'No'}</p>
-                        {caseItem?.date && <p><strong>Date:</strong> {caseItem?.date}</p>}
-                        <p><strong>Details:</strong> {caseItem?.details}</p>
-                    </div>
-                ))}
-                {
-                    content?.pending_cases?.length === 0 && (
-                        <p>No pending cases</p>
-                    )
-                }
-                <p><strong>Convicted Cases:</strong> {content?.convicted_cases}</p>
-                {
-                    content?.convicted_cases?.length === 0 && (
-                        <p>No convicted cases</p>
-                    )
-                }
-            </>
-        )}
-        {title === "Legislative Activity" && (
-            <>
-                <p><strong>Questions Raised:</strong> {content?.questions_raised_count}</p>
-                <p>{content?.activity_description}</p>
             </>
         )}
         {title === "Overall Performance" && (

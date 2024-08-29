@@ -37,6 +37,8 @@ const Page = () => {
             pending_cases: [],
             convicted_cases: [],
         },
+        criminal_cases: 0,
+        laws_broken: [],
         parliamentary_activities: {
             questions: [],
             debates: [],
@@ -75,8 +77,8 @@ const Page = () => {
                     }
                 });
                 const data = await response.data;
-                console.log(data)
-                setChartData(data);
+                // console.log(data)
+                setChartData(data.data);
             } catch (error) {
                 console.error('Error fetching AI data:', error);
             }
