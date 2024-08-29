@@ -246,7 +246,7 @@ def get_summary():
         return jsonify({"error": str(e)}), 500
     
     
-@app.route('/get_scraped_data', methods=['GET'])
+@app.route('/get_scraped_data', methods=['POST'])
 def get_scraped_data():
     data = request.json
     name = data.get("name")

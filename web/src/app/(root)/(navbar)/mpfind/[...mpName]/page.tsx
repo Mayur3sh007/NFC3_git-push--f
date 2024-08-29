@@ -45,6 +45,7 @@ const Page = () => {
     });
 
     useEffect(() => {
+        if (!mp) return;
         async function fetchAIData() {
             try {
                 const response = await axios.post('http://127.0.0.1:5000/get_summary', {
@@ -66,25 +67,16 @@ const Page = () => {
 
         async function fetchChartData() {
             try {
-                let headersList = {
-                    "Accept": "*/*",
-                    "Content-Type": "application/json"
-                }
-
-                let bodyContent = JSON.stringify({
-                    "name": "Devendra Singh Alias Bhole Singh"
+                const response = await axios.post('http://127.0.0.1:5000/get_scraped_data', {
+                    name: mp?.mp_name
+                }, {
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
                 });
-
-                let reqOptions = {
-                    url: "http://127.0.0.1:5000/get_scraped_data",
-                    method: "GET",
-                    headers: headersList,
-                    data: bodyContent,
-                }
-
-                let response = await axios.request(reqOptions);
-                console.log(response.data);
-                setChartData(response.data);
+                const data = await response.data;
+                console.log(data)
+                setChartData(data);
             } catch (error) {
                 console.error('Error fetching AI data:', error);
             }

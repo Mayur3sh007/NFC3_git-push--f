@@ -14,7 +14,7 @@ function LatestNews() {
     >
       <TabsList>
         <TabsTrigger className="w-52" value="Parliment">
-          Parliment
+          Parliament
         </TabsTrigger>
         <TabsTrigger className="w-52" value="Committees">
           Committees

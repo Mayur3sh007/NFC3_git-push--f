@@ -60,7 +60,7 @@ function Parliament() {
         </div>
         <div className="w-full mx-auto flex justify-end ">
           <button className="bg-teal-400 m-2 p-2 rounded-full">
-            read more ⏭️
+            Read More ⏭️
           </button>
         </div>
       </div>
