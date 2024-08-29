@@ -8,13 +8,24 @@ import Articles from "./tabss/Articles";
 
 function LatestNews() {
   return (
-    <Tabs defaultValue="Parliment" className="w-screen">
+    <Tabs
+      defaultValue="Parliment"
+      className="w-screen flex justify-center items-center flex-col mx-auto"
+    >
       <TabsList>
-        <TabsTrigger value="Parliment">Parliment</TabsTrigger>
-        <TabsTrigger value="Committees">Committees</TabsTrigger>
-        <TabsTrigger value="Videos">Videos</TabsTrigger>
-        <TabsTrigger value="Blogs">Blogs</TabsTrigger>
-        <TabsTrigger value="Articles">Articles</TabsTrigger>
+        <TabsTrigger className="w-52" value="Parliment">
+          Parliment
+        </TabsTrigger>
+        <TabsTrigger className="w-52" value="Committees">
+          Committees
+        </TabsTrigger>
+        {/* <TabsTrigger value="Videos">Videos</TabsTrigger> */}
+        <TabsTrigger className="w-52" value="Blogs">
+          Blogs
+        </TabsTrigger>
+        <TabsTrigger className="w-52" value="Articles">
+          Articles
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="Parliment">
         <Parliment />
@@ -22,9 +33,9 @@ function LatestNews() {
       <TabsContent value="Committees">
         <Committees />
       </TabsContent>
-      <TabsContent value="Videos">
+      {/* <TabsContent value="Videos">
         <Videos />
-      </TabsContent>
+      </TabsContent> */}
       <TabsContent value="Blogs">
         <Blogs />
       </TabsContent>
