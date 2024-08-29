@@ -226,15 +226,16 @@ def get_neta_summary(prompt):
     
   return completion.choices[0].message.content
 
-@app.route('/get_summary', methods=['GET'])
+@app.route('/get_summary', methods=['POST'])
 def get_summary():
     data = request.json
     name = data.get("name")
-    print(name)
-    candidate_Data = get_candidate_data(name)
-    # print(candidate_Data)
-    prompt = format_detailed_prompt(candidate_Data)
-    print(prompt)
+    candidate_data = get_candidate_data(name)
+
+    if "error" in candidate_data:
+        return jsonify(candidate_data), 400
+
+    prompt = format_detailed_prompt(candidate_data)
     if not prompt:
         return jsonify({"error": "Prompt is required"}), 400
     
