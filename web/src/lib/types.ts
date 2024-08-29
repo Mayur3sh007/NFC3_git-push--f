@@ -39,4 +39,59 @@ export type MPProfile = {
     term_end_date: string;
     term_start_date: string;
   };
-  
+
+export type ChartData = {
+    profile_url: string;
+    cases: {
+        pending_cases: {
+            "Serial No.": string;
+            "FIR No.": string;
+            "Case No.": string;
+            "Court": string;
+            "IPC Sections Applicable": string;
+            "Other Details / Other Acts / Sections Applicable": string;
+            "Charges Framed": string;
+            "Date on which charges were framed": string;
+            "Appeal Filed": string;
+            "Details and present status of appeal": string;
+        }[];
+        convicted_cases: {
+            "Serial No.": string;
+        }[];
+    };
+    parliamentary_activities: {
+        questions: never[];
+        debates: {
+            "Date": string;
+            "Title": string;
+            "Link": string;
+            "Type": string;
+        }[];
+        bills: never[];
+    };
+};
+
+export type AIData = {
+    main_agenda_or_focus_areas: {
+        identified_themes: string[];
+        focus_areas: string;
+    };
+    criminal_record_or_corruption_issues: {
+        pending_cases: {
+            case_number: string;
+            court: string;
+            charges_framed: boolean;
+            date: string;
+            details: string;
+        }[];
+        convicted_cases: string;
+    };
+    legislative_activity: {
+        questions_raised_count: number;
+        activity_description: string;
+    };
+    overall_performance: {
+        impact: string;
+        potential_concerns: string;
+    };
+};
