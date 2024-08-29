@@ -1,17 +1,16 @@
 import React, { ReactNode } from "react";
 import { Metadata } from "next";
-import { MPProvider } from "@/context/MPContext";
 
 export const metadata: Metadata = {
-    title: "Protected",
-    description: "Protected Route Layout",
+    title: "Search",
+    description: "Search Layout",
 };
 
 const RootLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
     return (
-        <MPProvider>
+        <>
             {children}
-        </MPProvider>
+        </>
     )
 }
 
