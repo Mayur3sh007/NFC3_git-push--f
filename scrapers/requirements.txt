@@ -6,3 +6,6 @@ flask
 flask-cors
 nltk
 python-dotenv
+transformers
+tensorflow
+tf-keras

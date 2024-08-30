@@ -8,8 +8,10 @@ import requests
 import urllib.parse
 from bs4 import BeautifulSoup
 import json
-from transformers import pipeline
 from collections import defaultdict
+from transformers import pipeline
+import tensorflow as tf
+
 
 os.environ['GROQ_API_KEY'] = os.getenv("GROQ_API_KEY")
 
@@ -44,7 +46,9 @@ def get_candidate_data(candidate_name):
     response = requests.get(search_url)
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    table = soup.find_all('table')[3]
+    tabletest = soup.find_all('table')
+    if len(tabletest) >= 4:
+        table = tabletest[3]
     if table:
         first_row = table.find('tr', class_=lambda x: x != 'w3-black')
         if first_row:
@@ -65,12 +69,40 @@ def get_candidate_data(candidate_name):
         profile_soup = BeautifulSoup(profile_response.content, "html.parser")
 
         cases = profile_soup.find_all("div", class_="w3-responsive")
-        data = {
-            "pending_cases": extract_table_data(cases[1]) if len(cases) > 1 else None,
-            "convicted_cases": extract_table_data(cases[2]) if len(cases) > 2 else None
-        }
+        if len(cases) == 0:
+            data = {}
+        else:
+            data = {
+                "pending_cases": extract_table_data(cases[1]) if len(cases) > 1 else None,
+                "convicted_cases": extract_table_data(cases[2]) if len(cases) > 2 else None
+            }
     except requests.exceptions.RequestException as e:
         return {"error": f"Network error occurred: {e}"}
+    
+    # criminal cases
+
+    criminal_cases = profile_soup.find("div", class_="w3-panel w3-red")
+    if criminal_cases is None:
+        criminal_cases = '0'
+    else:
+        criminal_cases = criminal_cases.find_all("div")
+        if len(criminal_cases) == 0:
+            criminal_cases = '0'
+        else:
+            criminal_cases = criminal_cases[1]
+            criminal_cases = criminal_cases.find("span").text.strip()
+    print(criminal_cases)
+
+    ipc_element = profile_soup.find("div", class_="w3-small")
+    
+    laws_broken = []
+    if ipc_element is None:
+        for item in ipc_element.find_all("li"):
+            direct_text = item.find(text=True, recursive=False)
+            text = direct_text.replace("charges related to", "").strip()
+            laws_broken.append(text)
+
+
 
     # Extract parliamentary activities data
     try:
@@ -154,8 +186,10 @@ def get_candidate_data(candidate_name):
         # Combine both cases and parliamentary activities data
         return {
             "profile_url": profile_url,
+            "criminal_cases": criminal_cases,
             "cases": data,
-            "parliamentary_activities": activity_data
+            "parliamentary_activities": activity_data,
+            "laws_broken": laws_broken
         }
     except requests.exceptions.RequestException as e:
         return {"error": f"Network error occurred: {e}"}
@@ -163,47 +197,104 @@ def get_candidate_data(candidate_name):
         return {"error": f"An error occurred: {e}"}
 
 def format_detailed_prompt(data):
-    print("Data received for formatting prompt:", data)
+    try:
+        cases = data.get('cases', {})
+        pending_cases = cases.get('pending_cases', [])
+        convicted_cases = cases.get('convicted_cases', [])
+        parliamentary_activities = data.get('parliamentary_activities', {})
+        debates = parliamentary_activities.get('debates', [])
+        questions = parliamentary_activities.get('questions', [])
+        bills = parliamentary_activities.get('bills', [])
 
-    pending_cases_summary = "\n".join([
-        f"Case {i+1}: FIR No. {case['FIR No.']}, Case No. {case['Case No.']}, Court: {case['Court']}, Charges Framed: {case['Charges Framed']}, Date: {case['Date on which charges were framed']}"
-        for i, case in enumerate(data.get('pending_cases', []))
-    ]) if data.get('pending_cases') else "No pending cases available."
+        # Format pending cases
+        if pending_cases:
+            pending_cases_summary = "\n".join([
+                f"Case {i+1}: FIR No. {case.get('FIR No.', 'N/A')}, "
+                f"Case No. {case.get('Case No.', 'N/A')}, "
+                f"Court: {case.get('Court', 'N/A')}, "
+                f"Charges Framed: {case.get('Charges Framed', 'N/A')}, "
+                f"Date: {case.get('Date on which charges were framed', 'N/A')}, "
+                f"Appeal Filed: {case.get('Appeal Filed', 'N/A')}, "
+                f"Details: {case.get('Details and present status of appeal', 'N/A')}, "
+                f"IPC Sections: {case.get('IPC Sections Applicable', 'N/A')}, "
+                f"Other Acts: {case.get('Other Details / Other Acts / Sections Applicable', 'N/A')}"
+                for i, case in enumerate(pending_cases)
+            ])
+        else:
+            pending_cases_summary = "No pending cases available."
 
-    convicted_cases_summary = "None" if not data.get('convicted_cases') else "\n".join([
-        f"Case {i+1}: {case['Serial No.']}"
-        for i, case in enumerate(data['convicted_cases'])
-    ]) if data.get('convicted_cases')[0].get('Serial No.') != "---------No Cases--------" else "No convicted cases available."
+        # Format convicted cases
+        if convicted_cases and convicted_cases[0].get('Serial No.', '') != "---------No Cases--------":
+            convicted_cases_summary = "\n".join([
+                f"Case {i+1}: Serial No. {case.get('Serial No.', 'N/A')}"
+                for i, case in enumerate(convicted_cases)
+            ])
+        else:
+            convicted_cases_summary = "No convicted cases available."
 
-    questions_summary = "\n".join([
-        f"Question {i+1}: Date: {q['Date']}, Title: {q['Title']}, Link: {q.get('Link', 'No link available')}"
-        for i, q in enumerate(data.get('questions', []))
-    ]) if data.get('questions') else "No questions available."
+        # Format debates
+        if debates:
+            debates_summary = "\n".join([
+                f"Debate {i+1}: Date: {debate.get('Date', 'N/A')}, "
+                f"Title: {debate.get('Title', 'N/A')}, "
+                f"Link: {debate.get('Link', 'No link available')}"
+                for i, debate in enumerate(debates)
+            ])
+        else:
+            debates_summary = "No debates available."
 
-    # Create a detailed prompt
-    prompt = f"""
-    Analyze the following data about a politician:
+        # Format questions
+        if questions:
+            questions_summary = "\n".join([
+                f"Question {i+1}: Date: {question.get('Date', 'N/A')}, "
+                f"Title: {question.get('Title', 'N/A')}, "
+                f"Link: {question.get('Link', 'No link available')}"
+                for i, question in enumerate(questions)
+            ])
+        else:
+            questions_summary = "No questions available."
 
-    Pending Cases:
-    {pending_cases_summary}
+        # Format bills
+        if bills:
+            bills_summary = "\n".join([
+                f"Bill {i+1}: Title: {bill.get('Title', 'N/A')}, "
+                f"Link: {bill.get('Link', 'No link available')}"
+                for i, bill in enumerate(bills)
+            ])
+        else:
+            bills_summary = "No bills available."
 
-    Convicted Cases:
-    {convicted_cases_summary}
+        # Create a detailed prompt
+        prompt = f"""
+        Analyze the following data about a politician:
 
-    Questions Raised:
-    {questions_summary}
+        **Pending Cases:**
+        {pending_cases_summary}
 
-    This is a Indian Loksabha politician's data and you to analyze it thoroughly and Provide a detailed analysis covering:
-    1. *Main Agenda or Focus Areas*: Based on the questions, what seems to be the main focus or agenda of the politician?
-    2. *Criminal Record or Corruption Issues*: Analyze the pending and convicted cases to assess the politician's involvement in criminal activities or corruption.
-    3. *Legislative Activity*: How active is the politician in terms of raising questions? What does this say about their legislative engagement?
-    4. *Overall Performance*: Summarize the politician's overall performance, including their impact, achievements, and any potential concerns.
+        **Convicted Cases:**
+        {convicted_cases_summary}
 
-    Ensure the analysis is comprehensive and provides detailed insights into the politician's work and integrity.
-    """
+        **Debates:**
+        {debates_summary}
 
-    print("Generated Prompt:", prompt)
-    return prompt
+        **Questions:**
+        {questions_summary}
+
+        **Bills:**
+        {bills_summary}
+
+        This is an Indian Lok Sabha politician's data, and you are to analyze it thoroughly and provide a detailed analysis covering:
+        1. **Main Agenda or Focus Areas**: Based on the provided debates and questions, what seems to be the main focus or agenda of the politician?
+        2. **Criminal Record or Corruption Issues**: Analyze the pending and convicted cases to assess the politician's involvement in criminal activities or corruption.
+        3. **Legislative Activity**: Evaluate how active the politician is in terms of raising debates, asking questions, and introducing bills. What does this say about their legislative engagement?
+        4. **Overall Performance**: Summarize the politician's overall performance, including their impact, achievements, and any potential concerns.
+
+        Ensure the analysis is comprehensive and provides detailed insights into the politician's work and integrity.
+        """
+        return prompt
+
+    except Exception as e:
+        return f"Error in generating prompt: {str(e)}"
 
 def get_neta_summary(prompt):
   
@@ -228,7 +319,6 @@ def get_neta_summary(prompt):
   )
     
   return completion.choices[0].message.content
-
 
 
 
@@ -425,7 +515,7 @@ def main(name, query, count=3):
             f"Analyze the following news content about {name}, focusing specifically on their personal reputation, role, and public perception. "
             "Consider the following aspects in your analysis: "
             "1. Personal Reputation: How does the news content affect the politician's personal image and credibility? Are there any notable actions, controversies, or achievements that impact their reputation? "
-            "2. Role: How is the politician’s role described in the news? Are there any changes or challenges to their role that might affect their effectiveness or influence? "
+            "2. Role: How is the politician's role described in the news? Are there any changes or challenges to their role that might affect their effectiveness or influence? "
             "3. Public Perception: What is the overall sentiment towards the politician based on the news content? How might this perception influence their public standing or future career? "
             "Provide a detailed analysis that integrates insights from this article."
         )
@@ -447,7 +537,7 @@ def main(name, query, count=3):
 
 
 # Initialize the sentiment analysis pipeline
-pipe = pipeline('sentiment-analysis')
+pipe = pipeline('sentiment-analysis',framework='tf')
 
 def truncate_text(text, max_length=512):
     return text[:max_length]
@@ -507,25 +597,32 @@ def analyze_articles(articles):
     }
 
 
+
 @app.route('/get_summary', methods=['POST'])
 def get_summary():
     data = request.json
     name = data.get("name")
+    
     candidate_data = get_candidate_data(name)
-
+    print(f"Printing Scraped Data: {candidate_data}")
+    
     if "error" in candidate_data:
         return jsonify(candidate_data), 400
 
     prompt = format_detailed_prompt(candidate_data)
+    print(f"Printing Prompt: {prompt}")
+    
     if not prompt:
         return jsonify({"error": "Prompt is required"}), 400
     
     try:
         summary = get_neta_summary(prompt)
+        print(f"Printing Summary: {summary}")
         return jsonify({"summary": summary}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+
 @app.route('/get_scraped_data', methods=['POST'])
 def get_scraped_data():
     data = request.json
