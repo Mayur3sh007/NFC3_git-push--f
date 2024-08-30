@@ -4,7 +4,7 @@ import React from 'react'
 import { MPProfile, AIData, ChartData } from '@/lib/types'
 import Image from 'next/image'
 import { AlertTriangle, User, MapPin, Building, Calendar, Briefcase, School, Target, FileText, BarChart3, Award } from 'lucide-react'
-import { Component } from './ParTracker'
+import { ParTracker } from './ParTracker'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -54,7 +54,7 @@ export default function MPPage({ data, id, aiData, chartData }: { data: MPProfil
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Component />
+                    <ParTracker chartData={chartData} />
                 </CardContent>
             </Card>
 

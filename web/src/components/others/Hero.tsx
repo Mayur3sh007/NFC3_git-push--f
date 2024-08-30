@@ -1,60 +1,56 @@
-'use client';
+import React from "react";
+import { BarChart3, FileText, Users, ShieldCheck, Vote } from "lucide-react";
 
-import React from 'react';
-import { FaGithub } from "react-icons/fa";
-import { Button, buttonVariants } from "@/components/ui/button";
-import PoliticianCards from './PoliticianCards';
-
-const Hero = () => {
+export default function Hero() {
   return (
-    <section className="min-h-screen w-screen bg-gradient-to-br from-gray-900 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-      <div className="container mx-auto px-4 py-20 md:py-32">
-        <div className="grid lg:grid-cols-2 gap-10 items-center">
-          <div className="text-center lg:text-start space-y-6">
-            <main className="text-4xl md:text-5xl font-bold">
-              <h1 className="inline">
-                <span className="inline bg-gradient-to-r from-[#F596D3] to-[#D247BF] text-transparent bg-clip-text">
-                  Politician
-                </span>{" "}
-                performance
-              </h1>{" "}
-              dashboard for{" "}
-              <h2 className="inline">
-                <span className="inline bg-gradient-to-r from-[#61DAFB] via-[#1fc0f1] to-[#03a3d7] text-transparent bg-clip-text">
-                  informed
-                </span>{" "}
-                citizens
-              </h2>
-            </main>
-
-            <p className="text-xl text-muted-foreground md:w-10/12 mx-auto lg:mx-0">
-              Track your representatives' activities, voting records, and public sentiment with our comprehensive dashboard.
-            </p>
-
-            <div className="space-y-4 md:space-y-0 md:space-x-4">
-              <Button className="w-full md:w-auto">Explore Dashboard</Button>
-
-              <a
-                rel="noreferrer noopener"
-                href="https://github.com/your-repo-link"
-                target="_blank"
-                className={`w-full md:w-auto ${buttonVariants({
-                  variant: "outline",
-                })}`}
-              >
-                View Source
-                <FaGithub className="ml-2 w-5 h-5" />
-              </a>
-            </div>
-          </div>
-
-          <div className="lg:max-w-[600px] w-full mx-auto">
-            <PoliticianCards />
-          </div>
+    <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+      <div className="container px-4 md:px-6">
+        <div className="flex flex-col items-center space-y-4 text-center">
+          <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
+            Political Insight Platform
+          </h1>
+          <p className="mx-auto max-w-[700px] text-zinc-200 md:text-xl">
+            Comprehensive tracking and analysis for political activities
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+          <FeatureCard
+            icon={<BarChart3 className="h-10 w-10" />}
+            title="News Tracking & Sentiment"
+            description="Monitor news mentions and analyze sentiment. Stay updated with how the politician is being discussed in the media and public sentiment towards them."
+          />
+          <FeatureCard
+            icon={<FileText className="h-10 w-10" />}
+            title="Parliamentary Activities"
+            description="Track legislative contributions and involvement. Get insights into the politician's participation in parliamentary proceedings."
+          />
+          <FeatureCard
+            icon={<Users className="h-10 w-10" />}
+            title="Custom Scoring System"
+            description="Utilize a robust scoring algorithm to evaluate political performance based on various metrics and activities."
+          />
+          <FeatureCard
+            icon={<ShieldCheck className="h-10 w-10" />}
+            title="Criminal Records"
+            description="Check for any criminal cases or allegations. Ensure transparency in the politician's legal history."
+          />
+          <FeatureCard
+            icon={<Vote className="h-10 w-10" />}
+            title="Voting Record"
+            description="Track the politician's voting history. Analyze patterns and consistency in their legislative decisions."
+          />
         </div>
       </div>
     </section>
   );
-};
+}
 
-export default Hero;
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+  return (
+    <div className="flex flex-col items-center p-6 bg-white bg-opacity-10 rounded-lg backdrop-blur-lg transition-all hover:bg-opacity-20 hover:scale-105">
+      <div className="mb-4">{icon}</div>
+      <h3 className="text-xl font-bold mb-2">{title}</h3>
+      <p className="text-zinc-200 text-sm text-center">{description}</p>
+    </div>
+  );
+}

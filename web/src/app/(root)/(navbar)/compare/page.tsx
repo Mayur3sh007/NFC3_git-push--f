@@ -1,8 +1,9 @@
+import Compare from '@/components/others/Compare'
 import React from 'react'
 
 const page = () => {
     return (
-        <div>party find</div>
+        <Compare />
     )
 }
 
