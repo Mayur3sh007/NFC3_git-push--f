@@ -678,21 +678,15 @@ def analyze_sentiment():
         return jsonify({'error': str(e)}), 500
 
 
-# Calculating custom score
-
-# Z-Score normalization
 def z_score_normalize(value, mean, std):
     return (value - mean) / std
 
-# Nonlinear transformation (Sigmoid)
-def transform_sentiment(sentiment_z, k=1.5):
-    return expit(k * sentiment_z)
+def transform_sentiment(sentiment_z, k=1.0):
+    return 2 * expit(k * sentiment_z) - 1
 
-# Penalization for criminal cases (Exponential)
-def penalize_criminal_cases(criminal_z, a=1):
-    return np.exp(-a * criminal_z)
+def penalize_criminal_cases(criminal_z, a=1.5, b=0.5):
+    return 1 / (1 + np.exp(a * (criminal_z - b)))
 
-# Rating Calculation
 def calculate_rating(sentiment, questions, bills, debates, criminal, 
                      mean_sentiment, std_sentiment, 
                      mean_questions, std_questions,
@@ -708,21 +702,25 @@ def calculate_rating(sentiment, questions, bills, debates, criminal,
     debates_z = z_score_normalize(debates, mean_debates, std_debates)
     criminal_z = z_score_normalize(criminal, mean_criminal, std_criminal)
     
-    # Transform Sentiment
+    # Transform Sentiment (now ranges from -1 to 1)
     S_prime = transform_sentiment(sentiment_z)
     
-    # Penalize Criminal Cases
+    # Penalize Criminal Cases (now ranges from 0 to 1)
     C_prime = penalize_criminal_cases(criminal_z)
     
-    # Interaction Term
+    # Interaction Term (ranges from -1 to 1)
     I_SC = S_prime * C_prime
     
-    # Calculate Weighted Sum
-    R = (w_S * S_prime) + (w_Q * questions_z) + (w_B * bills_z) + (w_D * debates_z) \
-        - (w_C * (1 - C_prime)) - (w_I_SC * (1 - I_SC))
+    # Calculate Weighted Sum with Adjusted Components
+    R = (w_S * S_prime) + \
+        (w_Q * np.tanh(questions_z / 2)) + \
+        (w_B * np.tanh(bills_z / 2)) + \
+        (w_D * np.tanh(debates_z / 2)) - \
+        (w_C * (1 - C_prime)) - \
+        (w_I_SC * (1 - I_SC))
     
-    # Final Scaling (0-10 scale)
-    final_rating = np.clip(R * 10, 0, 10)
+    # Final Scaling (0-10 scale) with smoother transition
+    final_rating = 5 + (5 * np.tanh(R))
     
     return final_rating
 
@@ -730,24 +728,32 @@ def calculate_rating(sentiment, questions, bills, debates, criminal,
 def calculate_rating_endpoint():
     data = request.json
     
-    sentiment = data.get('sentiment')
-    questions = data.get('questions')
-    bills = data.get('bills')
-    debates = data.get('debates')
-    criminal = data.get('criminal')
+    # Input validation
+    required_fields = ['sentiment', 'questions', 'bills', 'debates', 'criminal']
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing required fields"}), 400
+    
+    try:
+        sentiment = float(data['sentiment'])
+        questions = int(data['questions'])
+        bills = float(data['bills'])
+        debates = int(data['debates'])
+        criminal = float(data['criminal'])
+    except ValueError:
+        return jsonify({"error": "Invalid input types"}), 400
     
     # Example Mean and Standard Deviation Values (Replace these with actual values)
-    mean_sentiment = 0.5
+    mean_sentiment = 0.62
     std_sentiment = 0.1
-    mean_questions = 25
+    mean_questions = 12
     std_questions = 10
-    mean_bills = 4
-    std_bills = 2
-    mean_debates = 15
-    std_debates = 5
-    mean_criminal = 3
+    mean_bills = 1
+    std_bills = 0.1
+    mean_debates = 4
+    std_debates = 2
+    mean_criminal = 1
     std_criminal = 1
-
+    
     # Calculate the rating
     rating = calculate_rating(sentiment, questions, bills, debates, criminal, 
                               mean_sentiment, std_sentiment, 
@@ -755,7 +761,7 @@ def calculate_rating_endpoint():
                               mean_bills, std_bills,
                               mean_debates, std_debates,
                               mean_criminal, std_criminal)
-
+    
     return jsonify({
         "rating": round(rating, 2)
     })
