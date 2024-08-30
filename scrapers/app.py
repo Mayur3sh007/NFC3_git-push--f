@@ -11,6 +11,9 @@ import json
 from collections import defaultdict
 from transformers import pipeline
 import tensorflow as tf
+import numpy as np
+from scipy.special import expit  # For the sigmoid function
+
 
 
 os.environ['GROQ_API_KEY'] = os.getenv("GROQ_API_KEY")
@@ -673,6 +676,89 @@ def analyze_sentiment():
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# Calculating custom score
+
+# Z-Score normalization
+def z_score_normalize(value, mean, std):
+    return (value - mean) / std
+
+# Nonlinear transformation (Sigmoid)
+def transform_sentiment(sentiment_z, k=1.5):
+    return expit(k * sentiment_z)
+
+# Penalization for criminal cases (Exponential)
+def penalize_criminal_cases(criminal_z, a=1):
+    return np.exp(-a * criminal_z)
+
+# Rating Calculation
+def calculate_rating(sentiment, questions, bills, debates, criminal, 
+                     mean_sentiment, std_sentiment, 
+                     mean_questions, std_questions,
+                     mean_bills, std_bills,
+                     mean_debates, std_debates,
+                     mean_criminal, std_criminal,
+                     w_S=0.25, w_Q=0.15, w_B=0.10, w_D=0.15, w_C=0.20, w_I_SC=0.15):
+    
+    # Normalize the inputs (calculate z-scores)
+    sentiment_z = z_score_normalize(sentiment, mean_sentiment, std_sentiment)
+    questions_z = z_score_normalize(questions, mean_questions, std_questions)
+    bills_z = z_score_normalize(bills, mean_bills, std_bills)
+    debates_z = z_score_normalize(debates, mean_debates, std_debates)
+    criminal_z = z_score_normalize(criminal, mean_criminal, std_criminal)
+    
+    # Transform Sentiment
+    S_prime = transform_sentiment(sentiment_z)
+    
+    # Penalize Criminal Cases
+    C_prime = penalize_criminal_cases(criminal_z)
+    
+    # Interaction Term
+    I_SC = S_prime * C_prime
+    
+    # Calculate Weighted Sum
+    R = (w_S * S_prime) + (w_Q * questions_z) + (w_B * bills_z) + (w_D * debates_z) \
+        - (w_C * (1 - C_prime)) - (w_I_SC * (1 - I_SC))
+    
+    # Final Scaling (0-10 scale)
+    final_rating = np.clip(R * 10, 0, 10)
+    
+    return final_rating
+
+@app.route('/calculate_rating', methods=['POST'])
+def calculate_rating_endpoint():
+    data = request.json
+    
+    sentiment = data.get('sentiment')
+    questions = data.get('questions')
+    bills = data.get('bills')
+    debates = data.get('debates')
+    criminal = data.get('criminal')
+    
+    # Example Mean and Standard Deviation Values (Replace these with actual values)
+    mean_sentiment = 0.5
+    std_sentiment = 0.1
+    mean_questions = 25
+    std_questions = 10
+    mean_bills = 4
+    std_bills = 2
+    mean_debates = 15
+    std_debates = 5
+    mean_criminal = 3
+    std_criminal = 1
+
+    # Calculate the rating
+    rating = calculate_rating(sentiment, questions, bills, debates, criminal, 
+                              mean_sentiment, std_sentiment, 
+                              mean_questions, std_questions,
+                              mean_bills, std_bills,
+                              mean_debates, std_debates,
+                              mean_criminal, std_criminal)
+
+    return jsonify({
+        "rating": round(rating, 2)
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)
