@@ -539,6 +539,7 @@ def main(name, query, count=3):
 # Initialize the sentiment analysis pipeline
 pipe = pipeline('sentiment-analysis',framework='tf')
 
+
 def truncate_text(text, max_length=512):
     return text[:max_length]
 

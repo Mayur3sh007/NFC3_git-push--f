@@ -59,6 +59,8 @@ export type ChartData = {
             "Serial No.": string;
         }[];
     };
+    criminal_cases: number;
+    laws_broken: string[];
     parliamentary_activities: {
         questions: never[];
         debates: {
