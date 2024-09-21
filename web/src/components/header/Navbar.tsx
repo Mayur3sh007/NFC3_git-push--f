@@ -22,10 +22,9 @@ export default function Navbar() {
 
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex space-x-8">
+                        <Link href="/" className="hover:text-light-2">Home</Link>
                         <Link href="/mpfind" className="hover:text-light-2">MPs</Link>
                         <Link href="/confind" className="hover:text-light-2">Contituencies</Link>
-                        <Link href="/partyfind" className="hover:text-light-2">Parties</Link>
-                        <Link href="#" className="hover:text-light-2">Anees</Link>
                     </div>
 
                     {/* Search Bar */}
